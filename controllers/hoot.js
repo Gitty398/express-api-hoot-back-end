@@ -1,14 +1,10 @@
 const express = require("express");
 const verifyToken = require("../middleware/verify-token.js");
 const Hoot = require("../models/hoot.js");
+const { findById } = require("../models/user.js");
 const router = express.Router();
 
 /* 
-HTTP Method	Controller	Response	URI	Use Case
-
-
-GET	show	200	/hoots/:hootId	Get a single hoot
-PUT	update	200	/hoots/:hootId	Update a hoot
 DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
 POST	createComment	200	/hoots/:hootId/comments	Create a comment 
 */
@@ -57,6 +53,74 @@ router.get("/", verifyToken, async (req, res) => {
         res.status(500).json({ err: error.message })
     }
 });
+
+// PUT	update	200	/hoots/:hootId	Update a hoot
+
+router.put("/:hootId", verifyToken, async (req, res) => {
+    try {
+
+
+        const foundHoot = await Hoot.findById(req.params.hootId)
+
+        if (!foundHoot.author.equals(req.user._id)) {
+            res.status(403).json
+            throw new Error("You can only edit Hoots you own")
+        }
+
+
+        if (!['News', 'Sports', 'Games', 'Movies', 'Music', 'Television'].includes(req.body.category))
+            throw new Error(`${req.body.category} is not a valid category`)
+
+        if (!req.body.text.trim() || !req.body.title.trim()) {
+            throw new Error("Must have valid text in the field")
+        }
+
+        const updatedHoot = await Hoot.findByIdAndUpdate(req.params.hootId, req.body, { new: true })
+
+        if (!updatedHoot) {
+            throw new Error("Failed to update hoot. Please try again")
+        }
+
+        updatedHoot._doc.author = req.user
+
+
+        res.status(200).json(updatedHoot)
+
+    } catch (error) {
+        if (res.statusCode === 403) {
+            res.json({ err: error.message })
+        } else {
+            res.status(500).json({ err: error.message })
+        }
+    }
+});
+
+
+
+
+
+// GET	show	200	/hoots/:hootId	Get a single hoot
+
+router.get("/:hootId", verifyToken, async (req, res) => {
+    try {
+
+        const hoot = await Hoot.findById(req.params.hootId).populate("author")
+        if (!hoot) {
+            res.status(404)
+            throw new Error("Cannot find Hoot. Please select another Hoot")
+        }
+        res.status(200).json(hoot)
+    } catch (error) {
+        if (res.statusCode === 404) {
+            res.json({ err: error.message })
+        } else {
+            res.status(500).json({ err: error.message })
+        }
+
+    }
+});
+
+
 
 
 

@@ -4,6 +4,11 @@ function verifyToken(req, res, next) {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     // decoded will return a error or the payload from the token
+
+    if (!token) {
+      throw new Error("You must be authorized to access this content")
+    }
+
     const decoded = jwt.verify(token, process.env.SECRET);
     // add users info (username, _id) onto the request so we can use it
     // in tings like Task.find({owner: req.user._id})
@@ -11,7 +16,7 @@ function verifyToken(req, res, next) {
 
     next()
   } catch (error) {
-    res.status(401).json({err: error.message})
+    res.status(401).json({ err: error.message })
   }
 }
 
