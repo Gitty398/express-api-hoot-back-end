@@ -157,7 +157,7 @@ router.get("/:hootId", verifyToken, async (req, res) => {
     }
 });
 
-// POST /hoot/:hootId/comments
+// POST /hoots/:hootId/comments
 
 
 router.post("/:hootId/comments", verifyToken, async (req, res) => {
@@ -179,7 +179,40 @@ router.post("/:hootId/comments", verifyToken, async (req, res) => {
     }
 });
 
+// PUT /hoots/:hootId/comments/:commentId
 
+
+router.put("/:hootId/comments/:commentId", verifyToken, async (req, res) => {
+    try {
+
+        const hoot = await Hoot.findById(req.params.hootId)
+        const comment = hoot.comments.id(req.params.commentId)
+
+        if (!comment.author.equals(req.user._id)) {
+            res.status(403).json
+            throw new Error("You can only edit comments you own")
+        }
+
+        if (!!req.body.title.trim()) {
+            res.status(406)
+
+            throw new Error("The text must have valid text in the field")
+        }
+
+        comment._doc.author = req.user
+
+        req.body.author = req.user._id
+        comment.set(req.body)
+        await comment.save()
+
+        res.status(200).json(comment)
+
+
+    } catch (error) {
+        const { statusCode } = res;
+        res.status([403, 406].includes(statusCode) ? statusCode : 500).json({ err: error.message })
+    }
+});
 
 
 
