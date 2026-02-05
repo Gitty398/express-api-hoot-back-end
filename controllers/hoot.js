@@ -5,13 +5,50 @@ const { findById } = require("../models/user.js");
 const router = express.Router();
 
 /* 
-DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
+
 POST	createComment	200	/hoots/:hootId/comments	Create a comment 
 */
 
 // add routes here
 
 // controllers/hoots.js
+
+
+
+// DELETE	deleteHoot	200	/hoots/:hootId	Delete a hoot
+
+router.delete("/:hootId", verifyToken, async (req, res) => {
+    try {
+
+        const hootToDelete = await Hoot.findById(req.params.hootId)
+
+        if (!hootToDelete) {
+            res.status(404);
+            throw new Error("Could not find Hoot to delete")
+        }
+
+        if (!hootToDelete.author.equals(req.user._id)) {
+            res.status(403)
+            throw new Error("You are not authorized to delete this Hoot")
+        }
+
+        await hootToDelete.deleteOne()
+
+        res.status(200).json(hootToDelete)
+
+    } catch (error) {
+
+        if (res.statusCode === 403, 404) {
+            res.json({ err: error.message })
+        } else {
+            res.status(500).json({ err: error.message })
+        }
+    }
+});
+
+
+
+
 
 
 // POST	create	200	/hoots	Create a hoot
