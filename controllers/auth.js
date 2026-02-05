@@ -26,6 +26,7 @@ router.post("/sign-up", async (req, res) => {
     const token = jwt.sign({ payload }, process.env.SECRET);
 
     res.status(201).json({ token });
+
   } catch (error) {
     if (res.statusCode === 409) {
       res.json({ err: error.message });
